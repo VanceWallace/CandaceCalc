@@ -1,0 +1,12 @@
+Sound files placeholder:
+
+button-tap.mp3 - Button click sound effect
+printer.mp3 - Thermal printer sound effect
+
+These are placeholder files. You can replace them with actual MP3 files from:
+- Freesound.org
+- Zapsplat.com
+- or create your own using audio editing software
+
+For testing purposes, the app will work fine even if these are missing,
+and the audio playback will gracefully fail.

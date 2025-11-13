@@ -1,98 +1,318 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+/**
+ * Main Calculator Screen
+ * Retro 1980s calculator for checkbook balancing
+ */
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+import React, { useState, useEffect, useCallback } from 'react';
+import { StyleSheet, View, SafeAreaView, ScrollView, StatusBar } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
-export default function HomeScreen() {
+// Components
+import { Display } from '@/components/calculator/Display';
+import { ButtonGrid } from '@/components/calculator/ButtonGrid';
+import { ReceiptTape } from '@/components/calculator/ReceiptTape';
+import { ErrorModal } from '@/components/calculator/ErrorModal';
+import { UndoRedoIndicator } from '@/components/calculator/UndoRedoIndicator';
+import { ModeSwitch } from '@/components/calculator/ModeSwitch';
+
+// Hooks
+import { useCalculator } from '@/hooks/calculator/useCalculator';
+import { useUndoRedo } from '@/hooks/calculator/useUndoRedo';
+
+// Utils and constants
+import { CalculatorEngine } from '@/utils/calculator';
+import { RetroColors } from '@/constants/Colors';
+import {
+  loadSettings,
+  getHistory,
+  saveCalculationToHistory,
+  autoCleanupHistory,
+  saveLastBalance,
+} from '@/utils/storage';
+import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
+import { CalculationHistory, AppSettings, CalculatorState } from '@/types/calculator';
+
+export default function CalculatorScreen() {
+  const [settings, setSettings] = useState<AppSettings>({
+    mode: 'checkbook',
+    lcdColor: 'amber',
+    soundEnabled: true,
+    retentionDays: 90,
+    currencySymbol: '$',
+    showModeWarning: true,
+  });
+
+  const [history, setHistory] = useState<CalculationHistory[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(true);
+  const [showModeWarning, setShowModeWarning] = useState(false);
+  const [newMode, setNewMode] = useState<'checkbook' | 'scientific'>('checkbook');
+
+  // Calculator logic
+  const calculator = useCalculator(settings.mode);
+  const undoRedo = useUndoRedo(calculator.state);
+
+  /**
+   * Load settings and history on app start
+   */
+  useEffect(() => {
+    const initialize = async () => {
+      try {
+        const loadedSettings = await loadSettings();
+        setSettings(loadedSettings);
+
+        // Auto-cleanup old history
+        await autoCleanupHistory(loadedSettings.retentionDays);
+
+        // Load history
+        const loadedHistory = await getHistory();
+        setHistory(loadedHistory);
+      } catch (error) {
+        console.error('Error initializing app:', error);
+      } finally {
+        setHistoryLoading(false);
+      }
+    };
+
+    initialize();
+  }, []);
+
+  /**
+   * Save state to undo/redo stack when it changes
+   */
+  useEffect(() => {
+    undoRedo.pushState(calculator.state);
+  }, [calculator.state, undoRedo]);
+
+  /**
+   * Handle number button press
+   */
+  const handleNumberPress = useCallback((digit: string) => {
+    calculator.handleNumberPress(digit);
+  }, [calculator]);
+
+  /**
+   * Handle decimal press
+   */
+  const handleDecimal = useCallback(() => {
+    calculator.handleDecimal();
+  }, [calculator]);
+
+  /**
+   * Handle operator press
+   */
+  const handleOperatorPress = useCallback((op: string) => {
+    calculator.handleOperatorPress(op as any);
+  }, [calculator]);
+
+  /**
+   * Handle equals - this should also save to history
+   */
+  const handleEquals = useCallback(async () => {
+    const prevState = calculator.state;
+    calculator.handleEquals();
+
+    // After equals, save to history if successful
+    setTimeout(() => {
+      if (!calculator.state.error && calculator.state.operation === null) {
+        const expression = CalcEngine.formatExpression(
+          prevState.previousValue || 0,
+          prevState.operation,
+          CalcEngine.getDisplayValue(prevState.display),
+          settings.currencySymbol
+        );
+
+        const result = CalcEngine.getDisplayValue(calculator.state.display);
+        const displayResult = CalcEngine.formatForDisplay(
+          result,
+          settings.mode,
+          settings.currencySymbol
+        );
+
+        // Save to history
+        saveCalculationToHistory(expression, result, displayResult)
+          .then((newItem) => {
+            if (newItem) {
+              setHistory((prev) => [newItem, ...prev]);
+
+              // Save last balance for checkbook mode
+              if (settings.mode === 'checkbook') {
+                saveLastBalance(result);
+              }
+            }
+          })
+          .catch((error) => console.error('Error saving to history:', error));
+      }
+    }, 0);
+  }, [calculator, settings]);
+
+  /**
+   * Handle undo
+   */
+  const handleUndo = useCallback(() => {
+    if (undoRedo.canUndo()) {
+      undoRedo.undo((newState) => {
+        calculator.restoreState(newState);
+      });
+    }
+  }, [calculator, undoRedo]);
+
+  /**
+   * Handle redo
+   */
+  const handleRedo = useCallback(() => {
+    if (undoRedo.canRedo()) {
+      undoRedo.redo((newState) => {
+        calculator.restoreState(newState);
+      });
+    }
+  }, [calculator, undoRedo]);
+
+  /**
+   * Handle mode change
+   */
+  const handleModeChange = useCallback(
+    (newMode: 'checkbook' | 'scientific') => {
+      if (settings.showModeWarning) {
+        setNewMode(newMode);
+        setShowModeWarning(true);
+      } else {
+        // Silently switch mode
+        setSettings((prev) => ({ ...prev, mode: newMode }));
+      }
+    },
+    [settings.showModeWarning]
+  );
+
+  /**
+   * Handle history item select
+   */
+  const handleHistoryItemSelect = useCallback((item: CalculationHistory) => {
+    // Restore the calculation result to display
+    calculator.restoreState({
+      display: item.displayResult,
+      previousValue: null,
+      operation: null,
+      waitingForOperand: true,
+      error: false,
+      errorMessage: '',
+    });
+  }, [calculator]);
+
+  /**
+   * Handle error modal undo
+   */
+  const handleErrorUndo = useCallback(() => {
+    calculator.handleAllClear();
+    handleUndo();
+  }, [calculator, handleUndo]);
+
+  const styles = StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: RetroColors.casingBeige,
+    },
+    container: {
+      flex: 1,
+      paddingHorizontal: 12,
+      paddingTop: 12,
+      paddingBottom: 8,
+      backgroundColor: RetroColors.casingBeige,
+    },
+    displaySection: {
+      marginBottom: 8,
+    },
+    receiptSection: {
+      marginBottom: 12,
+    },
+    buttonSection: {
+      flex: 1,
+      justifyContent: 'flex-end',
+    },
+  });
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={RetroColors.casingBeige}
+      />
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={{ flexGrow: 1 }}
+        scrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Display */}
+        <View style={styles.displaySection}>
+          <Display
+            value={calculator.state.display}
+            error={calculator.state.error}
+            errorMessage={calculator.state.errorMessage}
+            lcdColor={settings.lcdColor}
+            mode={settings.mode}
+            currencySymbol={settings.currencySymbol}
+          />
+        </View>
+
+        {/* Receipt Tape / History */}
+        <View style={styles.receiptSection}>
+          <ReceiptTape
+            history={history}
+            onHistoryItemSelect={handleHistoryItemSelect}
+            isLoading={historyLoading}
+            mode={settings.mode}
+          />
+        </View>
+
+        {/* Button Grid */}
+        <View style={styles.buttonSection}>
+          <ButtonGrid
+            mode={settings.mode}
+            onNumberPress={handleNumberPress}
+            onDecimalPress={handleDecimal}
+            onOperatorPress={handleOperatorPress}
+            onEqualsPress={handleEquals}
+            onClear={calculator.handleClear}
+            onAllClear={calculator.handleAllClear}
+            onBackspace={calculator.handleBackspace}
+            onUndo={handleUndo}
+            onRedo={handleRedo}
+            onNegativeToggle={calculator.handleNegative}
+            canUndo={undoRedo.canUndo()}
+            canRedo={undoRedo.canRedo()}
+          />
+        </View>
+      </ScrollView>
+
+      {/* Error Modal */}
+      <ErrorModal
+        visible={calculator.state.error}
+        errorMessage={calculator.state.errorMessage}
+        onDismiss={() => calculator.handleAllClear()}
+        onUndo={handleErrorUndo}
+        showUndoButton={true}
+      />
+
+      {/* Undo/Redo Indicator */}
+      {undoRedo.feedback && (
+        <UndoRedoIndicator
+          visible={!!undoRedo.feedback}
+          message={undoRedo.feedback.message}
+          isUndo={undoRedo.feedback.isUndo}
+          onDismiss={undoRedo.clearFeedback}
+        />
+      )}
+
+      {/* Mode Switch Warning */}
+      <ModeSwitch
+        visible={showModeWarning}
+        newMode={newMode}
+        onDismiss={() => {
+          setShowModeWarning(false);
+          setSettings((prev) => ({ ...prev, mode: newMode }));
+        }}
+      />
+    </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
