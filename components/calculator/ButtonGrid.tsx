@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { StyleSheet, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Button } from './Button';
 import { CHECKBOOK_LAYOUT, SCIENTIFIC_LAYOUT, BUTTON_GAP } from '@/constants/calculator';
 import { CalculatorMode } from '@/types/calculator';
@@ -106,6 +106,7 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
 
   const styles = StyleSheet.create({
     container: {
+      flex: 1,
       paddingHorizontal: 4,
     },
     row: {
@@ -120,11 +121,7 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      scrollEnabled={false}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.container}>
       {buttonLayout.map((row, rowIndex) => (
         <View key={`row-${rowIndex}`} style={styles.row}>
           {row.map((label) => (
@@ -141,7 +138,7 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
           ))}
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 };
 

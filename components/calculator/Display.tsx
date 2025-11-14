@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
+import { View, Text, useWindowDimensions } from 'react-native';
 import { RetroColors, AmberLcdPalette, GreenLcdPalette } from '@/constants/Colors';
 import { LcdColor, CalculatorMode } from '@/types/calculator';
 
@@ -40,7 +40,8 @@ export const Display: React.FC<DisplayProps> = ({
 
   const displayText = error ? errorMessage : displayContent;
 
-  const styles = StyleSheet.create({
+  // Memoize styles to prevent recreation on every render
+  const styles = useMemo(() => ({
     container: {
       width: '100%',
       backgroundColor: lcdPalette.background,
@@ -55,26 +56,26 @@ export const Display: React.FC<DisplayProps> = ({
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 4,
-    },
+    } as const,
     displayText: {
       color: error ? RetroColors.errorRed : lcdPalette.display,
       fontSize: dynamicFontSize,
       fontFamily: 'monospace',
-      textAlign: 'right',
-      fontWeight: '500',
+      textAlign: 'right' as const,
+      fontWeight: '500' as const,
       textShadowColor: error ? 'transparent' : lcdPalette.glow,
       textShadowOffset: { width: 0, height: 0 },
       textShadowRadius: error ? 0 : 8,
       letterSpacing: 1,
-    },
+    } as const,
     modeLabel: {
       color: lcdPalette.display,
       fontSize: 10,
       fontFamily: 'monospace',
       marginTop: 4,
       opacity: 0.6,
-    },
-  });
+    } as const,
+  }), [lcdPalette, dynamicFontSize, error]);
 
   return (
     <View style={styles.container}>

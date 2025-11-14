@@ -5,8 +5,6 @@
 
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  TouchableOpacity,
   Text,
   View,
   ViewStyle,
@@ -33,10 +31,10 @@ export const Button: React.FC<ButtonProps> = ({
   const [pressed, setPressed] = useState(false);
   const { width: screenWidth } = useWindowDimensions();
 
-  // Calculate responsive button size
-  const responsiveButtonSize = Math.min(
-    screenWidth * 0.18, // 18% of screen width
-    BUTTON_SIZE // but not larger than constant
+  // Calculate responsive button size with minimum fallback
+  const responsiveButtonSize = Math.max(
+    Math.min(screenWidth * 0.18, BUTTON_SIZE),
+    50 // minimum 50px to prevent invisible buttons on web
   );
 
   // Determine button category
@@ -100,51 +98,52 @@ export const Button: React.FC<ButtonProps> = ({
 
   const colors = getButtonColors();
 
-  const styles = StyleSheet.create({
-    buttonContainer: {
-      width: responsiveButtonSize,
-      height: responsiveButtonSize,
-      marginRight: BUTTON_GAP / 2,
-      marginLeft: BUTTON_GAP / 2,
-      marginBottom: BUTTON_GAP,
-    } as ViewStyle,
-    button: {
-      flex: 1,
-      backgroundColor: colors.backgroundColor,
-      borderRadius: 6,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: pressed ? 2 : 3,
-      borderTopColor: pressed ? colors.shadowDark : colors.shadowLight,
-      borderLeftColor: pressed ? colors.shadowDark : colors.shadowLight,
-      borderBottomColor: pressed ? colors.shadowLight : colors.shadowDark,
-      borderRightColor: pressed ? colors.shadowLight : colors.shadowDark,
-      elevation: pressed ? 0 : 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: pressed ? 0.2 : 0.4,
-      shadowRadius: pressed ? 1 : 3,
-      transform: [{ translateY: pressed ? 2 : 0 }],
-    } as ViewStyle,
-    buttonText: {
-      color: colors.textColor,
-      fontSize: Math.max(responsiveButtonSize * 0.4, 16),
-      fontWeight: 'bold',
-      fontFamily: 'monospace',
-    },
-  });
+  // Memoize styles to avoid recreating on every render
+  const containerStyle: ViewStyle = {
+    width: responsiveButtonSize,
+    height: responsiveButtonSize,
+    marginRight: BUTTON_GAP / 2,
+    marginLeft: BUTTON_GAP / 2,
+    marginBottom: BUTTON_GAP,
+  };
+
+  const buttonStyle: ViewStyle = {
+    flex: 1,
+    backgroundColor: colors.backgroundColor,
+    borderRadius: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: pressed ? 2 : 3,
+    borderTopColor: pressed ? colors.shadowDark : colors.shadowLight,
+    borderLeftColor: pressed ? colors.shadowDark : colors.shadowLight,
+    borderBottomColor: pressed ? colors.shadowLight : colors.shadowDark,
+    borderRightColor: pressed ? colors.shadowLight : colors.shadowDark,
+    elevation: pressed ? 0 : 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 2, height: 2 },
+    shadowOpacity: pressed ? 0.2 : 0.4,
+    shadowRadius: pressed ? 1 : 3,
+    transform: [{ translateY: pressed ? 2 : 0 }],
+  };
+
+  const textStyle = {
+    color: colors.textColor,
+    fontSize: Math.max(responsiveButtonSize * 0.4, 16),
+    fontWeight: 'bold' as const,
+    fontFamily: 'monospace',
+  };
 
   return (
-    <View style={styles.buttonContainer}>
+    <View style={containerStyle}>
       <Pressable
-        style={styles.button}
+        style={buttonStyle}
         onPress={onPress}
         onPressIn={() => setPressed(true)}
         onPressOut={() => setPressed(false)}
         disabled={disabled}
         android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
       >
-        <Text style={styles.buttonText} numberOfLines={1}>
+        <Text style={textStyle} numberOfLines={1}>
           {label}
         </Text>
       </Pressable>

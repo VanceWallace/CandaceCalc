@@ -78,43 +78,48 @@ export default function CalculatorScreen() {
   }, []);
 
   /**
-   * Save state to undo/redo stack when it changes
+   * Destructure functions to avoid entire object as dependency
    */
-  useEffect(() => {
-    undoRedo.pushState(calculator.state);
-  }, [calculator.state]);
+  const {
+    handleNumberPress: calculatorHandleNumberPress,
+    handleDecimal: calculatorHandleDecimal,
+    handleOperatorPress: calculatorHandleOperatorPress,
+    handleEquals: calculatorHandleEquals,
+    restoreState,
+    state: calculatorState,
+  } = calculator;
 
   /**
    * Handle number button press
    */
   const handleNumberPress = useCallback((digit: string) => {
-    calculator.handleNumberPress(digit);
-  }, [calculator]);
+    calculatorHandleNumberPress(digit);
+  }, [calculatorHandleNumberPress]);
 
   /**
    * Handle decimal press
    */
   const handleDecimal = useCallback(() => {
-    calculator.handleDecimal();
-  }, [calculator]);
+    calculatorHandleDecimal();
+  }, [calculatorHandleDecimal]);
 
   /**
    * Handle operator press
    */
   const handleOperatorPress = useCallback((op: string) => {
-    calculator.handleOperatorPress(op as any);
-  }, [calculator]);
+    calculatorHandleOperatorPress(op as any);
+  }, [calculatorHandleOperatorPress]);
 
   /**
    * Handle equals - this should also save to history
    */
   const handleEquals = useCallback(async () => {
-    const prevState = calculator.state;
-    calculator.handleEquals();
+    const prevState = calculatorState;
+    calculatorHandleEquals();
 
     // After equals, save to history if successful
     setTimeout(() => {
-      if (!calculator.state.error && calculator.state.operation === null) {
+      if (!calculatorState.error && calculatorState.operation === null) {
         const expression = CalcEngine.formatExpression(
           prevState.previousValue || 0,
           prevState.operation,
@@ -122,7 +127,7 @@ export default function CalculatorScreen() {
           settings.currencySymbol
         );
 
-        const result = CalcEngine.getDisplayValue(calculator.state.display);
+        const result = CalcEngine.getDisplayValue(calculatorState.display);
         const displayResult = CalcEngine.formatForDisplay(
           result,
           settings.mode,
@@ -144,7 +149,7 @@ export default function CalculatorScreen() {
           .catch((error) => console.error('Error saving to history:', error));
       }
     }, 0);
-  }, [calculator, settings]);
+  }, [calculatorHandleEquals, calculatorState, settings]);
 
   /**
    * Handle undo
@@ -152,10 +157,10 @@ export default function CalculatorScreen() {
   const handleUndo = useCallback(() => {
     if (undoRedo.canUndo()) {
       undoRedo.undo((newState) => {
-        calculator.restoreState(newState);
+        restoreState(newState);
       });
     }
-  }, [calculator, undoRedo]);
+  }, [restoreState, undoRedo]);
 
   /**
    * Handle redo
@@ -163,10 +168,10 @@ export default function CalculatorScreen() {
   const handleRedo = useCallback(() => {
     if (undoRedo.canRedo()) {
       undoRedo.redo((newState) => {
-        calculator.restoreState(newState);
+        restoreState(newState);
       });
     }
-  }, [calculator, undoRedo]);
+  }, [restoreState, undoRedo]);
 
   /**
    * Handle mode change
