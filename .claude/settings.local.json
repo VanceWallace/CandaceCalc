@@ -6,7 +6,11 @@
       "Bash(npm run build:*)",
       "Bash(npm run:*)",
       "Bash(timeout 30 npx expo start:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nBuild retro 1980s calculator app for checkbook balancing\n\nThis commit implements a complete React Native Expo calculator app designed\nfor older users to balance their checkbooks. The app features a retro 1980s\naesthetic inspired by Canon palm printer calculators.\n\nFeatures:\n- Large 70x70px buttons for easy tapping\n- LCD display with amber/green color options\n- Checkbook mode (rounds to 2 decimals for cents)\n- Scientific mode (supports up to 8 decimals)\n- Undo/Redo system with 5-second visual feedback\n- Receipt tape history with scrollable entries\n- Persistent storage with AsyncStorage\n- Auto-cleanup of history (30/60/90 day retention)\n- Plain English error messages for user-friendly experience\n- 5-second timeouts for all messages (accessibility for older users)\n- Mode switch warnings explaining decimal precision\n- Settings modal for customization\n\nComponents:\n- Display: LCD-style display with high contrast\n- Button: Retro 3D buttons with raised/pressed effects\n- ButtonGrid: Responsive button layout for checkbook operations\n- ReceiptTape: Scrollable history with thermal paper aesthetic\n- ErrorModal: User-friendly error messages\n- UndoRedoIndicator: Visual feedback for undo/redo operations\n- ModeSwitch: Informational modal for mode transitions\n- SettingsModal: Comprehensive settings interface\n\nBusiness Logic:\n- useCalculator: State management for calculator operations\n- useUndoRedo: Maintains 20-state history for undo/redo\n- useSounds: Audio effects integration (placeholder for MP3s)\n- CalculatorEngine: Math operations with error handling\n- Storage utilities: AsyncStorage integration with persistence\n- Date formatter: Human-readable timestamps\n\nConfiguration:\n- Android API 21+ support\n- iOS 11+ support\n- TypeScript strict mode\n- Zero TypeScript errors\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git remote add:*)",
+      "Bash(git push:*)",
+      "Bash(timeout 10 git push:*)"
     ],
     "deny": [],
     "ask": []

@@ -10,6 +10,7 @@ import { MAX_DISPLAY_LENGTH } from '@/constants/calculator';
 
 const INITIAL_STATE: CalculatorState = {
   display: '0',
+  expression: '',
   previousValue: null,
   operation: null,
   waitingForOperand: false,
@@ -125,6 +126,7 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
       }
 
       const currentValue = CalculatorEngine.getDisplayValue(prev.display);
+      const operatorSymbol = newOperation || '';
 
       // If we have a previous value and operation, calculate first
       if (prev.previousValue !== null && prev.operation && !prev.waitingForOperand) {
@@ -141,14 +143,17 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
             error: true,
             errorMessage,
             display: '0',
+            expression: '',
           };
         }
 
         const displayResult = CalculatorEngine.formatForDisplay(result, mode);
+        const newExpression = `${displayResult} ${operatorSymbol}`;
 
         return {
           ...prev,
           display: displayResult,
+          expression: newExpression,
           previousValue: result,
           operation: newOperation,
           waitingForOperand: true,
@@ -158,9 +163,11 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
       }
 
       // No previous value yet, store current value
+      const newExpression = `${prev.display} ${operatorSymbol}`;
       return {
         ...prev,
         previousValue: currentValue,
+        expression: newExpression,
         operation: newOperation,
         waitingForOperand: true,
         error: false,
@@ -192,15 +199,18 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
           error: true,
           errorMessage,
           display: '0',
+          expression: '',
           waitingForOperand: true,
         };
       }
 
       const displayResult = CalculatorEngine.formatForDisplay(result, mode);
+      const fullExpression = `${prev.expression} ${prev.display} = ${displayResult}`;
 
       return {
         ...prev,
         display: displayResult,
+        expression: fullExpression,
         previousValue: result,
         operation: null,
         waitingForOperand: true,

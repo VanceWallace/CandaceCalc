@@ -10,6 +10,7 @@ import { LcdColor, CalculatorMode } from '@/types/calculator';
 
 interface DisplayProps {
   value: string;
+  expression?: string;
   error: boolean;
   errorMessage: string;
   lcdColor?: LcdColor;
@@ -19,6 +20,7 @@ interface DisplayProps {
 
 export const Display: React.FC<DisplayProps> = ({
   value,
+  expression = '',
   error,
   errorMessage,
   lcdColor = 'amber',
@@ -27,13 +29,16 @@ export const Display: React.FC<DisplayProps> = ({
 }) => {
   const screenWidth = Dimensions.get('window').width;
 
-  // Calculate font size based on screen width and value length
-  const baseFontSize = Math.min(screenWidth * 0.12, 60);
-  const dynamicFontSize = Math.max(baseFontSize - (value.length > 10 ? 20 : 0), 32);
+  // Show expression if available, otherwise show value
+  const displayContent = expression || value;
+
+  // Calculate font size based on screen width and content length
+  const baseFontSize = Math.min(screenWidth * 0.1, 48);
+  const dynamicFontSize = Math.max(baseFontSize - (displayContent.length > 15 ? 15 : 0), 24);
 
   const lcdPalette = lcdColor === 'amber' ? AmberLcdPalette : GreenLcdPalette;
 
-  const displayText = error ? errorMessage : value;
+  const displayText = error ? errorMessage : displayContent;
 
   const styles = StyleSheet.create({
     container: {

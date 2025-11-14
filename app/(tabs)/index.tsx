@@ -190,6 +190,7 @@ export default function CalculatorScreen() {
     // Restore the calculation result to display
     calculator.restoreState({
       display: item.displayResult,
+      expression: item.expression,
       previousValue: null,
       operation: null,
       waitingForOperand: true,
@@ -213,16 +214,20 @@ export default function CalculatorScreen() {
     },
     container: {
       flex: 1,
+      backgroundColor: RetroColors.casingBeige,
+    },
+    contentContainer: {
+      flexGrow: 1,
       paddingHorizontal: 12,
       paddingTop: 12,
       paddingBottom: 8,
-      backgroundColor: RetroColors.casingBeige,
+    },
+    receiptSection: {
+      minHeight: 150,
+      marginBottom: 12,
     },
     displaySection: {
       marginBottom: 8,
-    },
-    receiptSection: {
-      marginBottom: 12,
     },
     buttonSection: {
       flex: 1,
@@ -237,31 +242,42 @@ export default function CalculatorScreen() {
         backgroundColor={RetroColors.casingBeige}
       />
 
+      {/* Undo/Redo Indicator - Inside SafeAreaView to push content down */}
+      {undoRedo.feedback && (
+        <UndoRedoIndicator
+          visible={!!undoRedo.feedback}
+          message={undoRedo.feedback.message}
+          isUndo={undoRedo.feedback.isUndo}
+          onDismiss={undoRedo.clearFeedback}
+        />
+      )}
+
       <ScrollView
         style={styles.container}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={styles.contentContainer}
         scrollEnabled={true}
         showsVerticalScrollIndicator={false}
       >
-        {/* Display */}
-        <View style={styles.displaySection}>
-          <Display
-            value={calculator.state.display}
-            error={calculator.state.error}
-            errorMessage={calculator.state.errorMessage}
-            lcdColor={settings.lcdColor}
-            mode={settings.mode}
-            currencySymbol={settings.currencySymbol}
-          />
-        </View>
-
-        {/* Receipt Tape / History */}
+        {/* Receipt Tape / History - FIRST, at the top */}
         <View style={styles.receiptSection}>
           <ReceiptTape
             history={history}
             onHistoryItemSelect={handleHistoryItemSelect}
             isLoading={historyLoading}
             mode={settings.mode}
+          />
+        </View>
+
+        {/* Display */}
+        <View style={styles.displaySection}>
+          <Display
+            value={calculator.state.display}
+            expression={calculator.state.expression}
+            error={calculator.state.error}
+            errorMessage={calculator.state.errorMessage}
+            lcdColor={settings.lcdColor}
+            mode={settings.mode}
+            currencySymbol={settings.currencySymbol}
           />
         </View>
 
@@ -293,16 +309,6 @@ export default function CalculatorScreen() {
         onUndo={handleErrorUndo}
         showUndoButton={true}
       />
-
-      {/* Undo/Redo Indicator */}
-      {undoRedo.feedback && (
-        <UndoRedoIndicator
-          visible={!!undoRedo.feedback}
-          message={undoRedo.feedback.message}
-          isUndo={undoRedo.feedback.isUndo}
-          onDismiss={undoRedo.clearFeedback}
-        />
-      )}
 
       {/* Mode Switch Warning */}
       <ModeSwitch

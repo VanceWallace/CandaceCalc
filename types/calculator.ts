@@ -15,7 +15,8 @@ export interface CalculationHistory {
 }
 
 export interface CalculatorState {
-  display: string;
+  display: string; // Current number being entered
+  expression: string; // Full expression being built (e.g., "12.00 - 10 =")
   previousValue: number | null;
   operation: Operation | null;
   waitingForOperand: boolean;

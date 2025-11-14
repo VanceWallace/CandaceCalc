@@ -11,6 +11,7 @@ import {
   View,
   ViewStyle,
   Pressable,
+  Dimensions,
 } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { BUTTON_SIZE, BUTTON_GAP } from '@/constants/calculator';
@@ -30,6 +31,13 @@ export const Button: React.FC<ButtonProps> = ({
   type,
 }) => {
   const [pressed, setPressed] = useState(false);
+
+  // Calculate responsive button size
+  const screenWidth = Dimensions.get('window').width;
+  const responsiveButtonSize = Math.min(
+    screenWidth * 0.18, // 18% of screen width
+    BUTTON_SIZE // but not larger than constant
+  );
 
   // Determine button category
   const buttonType = type || BUTTON_CATEGORIES[label as keyof typeof BUTTON_CATEGORIES] || BUTTON_TYPES.NUMBER;
@@ -94,8 +102,8 @@ export const Button: React.FC<ButtonProps> = ({
 
   const styles = StyleSheet.create({
     buttonContainer: {
-      width: BUTTON_SIZE,
-      height: BUTTON_SIZE,
+      width: responsiveButtonSize,
+      height: responsiveButtonSize,
       marginRight: BUTTON_GAP / 2,
       marginLeft: BUTTON_GAP / 2,
       marginBottom: BUTTON_GAP,
@@ -120,7 +128,7 @@ export const Button: React.FC<ButtonProps> = ({
     } as ViewStyle,
     buttonText: {
       color: colors.textColor,
-      fontSize: Math.max(BUTTON_SIZE * 0.4, 20),
+      fontSize: Math.max(responsiveButtonSize * 0.4, 16),
       fontWeight: 'bold',
       fontFamily: 'monospace',
     },
