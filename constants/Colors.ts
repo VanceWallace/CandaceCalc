@@ -1,6 +1,6 @@
 /**
  * Retro 1980s calculator color palette
- * Inspired by Canon palm printer calculators
+ * Professional black/white/chrome/grey business calculator aesthetic
  */
 
 export const RetroColors = {
@@ -9,35 +9,35 @@ export const RetroColors = {
   lcdGreen: '#00FF00',
   lcdBackground: '#000000',
 
-  // Calculator Body (Casing)
-  casingBeige: '#D4C5B9',
-  casingBrown: '#8B7355',
-  casingDark: '#5C4033',
+  // Calculator Body (Casing) - Dark grey/charcoal
+  casingBeige: '#2A2A2A',
+  casingBrown: '#4A4A4A',
+  casingDark: '#1A1A1A',
 
-  // Button Colors
-  buttonBeige: '#E8DCC4',
-  buttonBrown: '#A67C52',
-  buttonOrange: '#FF8C00',
-  buttonRed: '#CD5C5C',
-  buttonGray: '#B0AEA4',
+  // Button Colors - Professional greys
+  buttonBeige: '#E0E0E0',
+  buttonBrown: '#808080',
+  buttonOrange: '#C0C0C0',
+  buttonRed: '#666666',
+  buttonGray: '#A0A0A0',
 
   // Button States
-  buttonBeigeHover: '#D4C5B9',
-  buttonBeigePressed: '#BFA99E',
+  buttonBeigeHover: '#D0D0D0',
+  buttonBeigePressed: '#C0C0C0',
 
   // Text Colors
-  textDark: '#333333',
+  textDark: '#1A1A1A',
   textLight: '#FFFFFF',
-  textGray: '#666666',
+  textGray: '#808080',
 
   // Receipt Paper
-  paperWhite: '#F5F5DC',
-  paperDots: '#333333',
+  paperWhite: '#FFFFFF',
+  paperDots: '#1A1A1A',
 
   // Shadows for 3D Effect
   shadowLight: '#FFFFFF',
-  shadowDark: '#4A4A4A',
-  shadowMedium: '#888888',
+  shadowDark: '#2A2A2A',
+  shadowMedium: '#606060',
 
   // Status Colors
   errorRed: '#CD5C5C',
