@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { StyleSheet, View, Text, Dimensions } from 'react-native';
+import { StyleSheet, View, Text, useWindowDimensions } from 'react-native';
 import { RetroColors, AmberLcdPalette, GreenLcdPalette } from '@/constants/Colors';
 import { LcdColor, CalculatorMode } from '@/types/calculator';
 
@@ -27,7 +27,7 @@ export const Display: React.FC<DisplayProps> = ({
   mode = 'checkbook',
   currencySymbol = '$',
 }) => {
-  const screenWidth = Dimensions.get('window').width;
+  const { width: screenWidth } = useWindowDimensions();
 
   // Show expression if available, otherwise show value
   const displayContent = expression || value;

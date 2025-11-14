@@ -11,7 +11,7 @@ import {
   View,
   ViewStyle,
   Pressable,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { BUTTON_SIZE, BUTTON_GAP } from '@/constants/calculator';
@@ -31,9 +31,9 @@ export const Button: React.FC<ButtonProps> = ({
   type,
 }) => {
   const [pressed, setPressed] = useState(false);
+  const { width: screenWidth } = useWindowDimensions();
 
   // Calculate responsive button size
-  const screenWidth = Dimensions.get('window').width;
   const responsiveButtonSize = Math.min(
     screenWidth * 0.18, // 18% of screen width
     BUTTON_SIZE // but not larger than constant

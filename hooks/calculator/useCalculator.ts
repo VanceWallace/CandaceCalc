@@ -52,11 +52,6 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
         };
       }
 
-      // Don't exceed max display length
-      if (prev.display.length >= MAX_DISPLAY_LENGTH) {
-        return prev;
-      }
-
       return {
         ...prev,
         display: prev.display + digit,
