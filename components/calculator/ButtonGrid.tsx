@@ -110,6 +110,7 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
     },
     row: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       justifyContent: 'flex-start',
       marginHorizontal: -BUTTON_GAP / 2,
     },

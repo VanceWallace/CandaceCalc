@@ -4,7 +4,8 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, View, SafeAreaView, ScrollView, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
 // Components
@@ -252,12 +253,7 @@ export default function CalculatorScreen() {
         />
       )}
 
-      <ScrollView
-        style={styles.container}
-        contentContainerStyle={styles.contentContainer}
-        scrollEnabled={true}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={styles.container}>
         {/* Receipt Tape / History - FIRST, at the top */}
         <View style={styles.receiptSection}>
           <ReceiptTape
@@ -299,7 +295,7 @@ export default function CalculatorScreen() {
             canRedo={undoRedo.canRedo()}
           />
         </View>
-      </ScrollView>
+      </View>
 
       {/* Error Modal */}
       <ErrorModal
