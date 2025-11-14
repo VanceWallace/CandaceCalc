@@ -85,6 +85,10 @@ export default function CalculatorScreen() {
     handleDecimal: calculatorHandleDecimal,
     handleOperatorPress: calculatorHandleOperatorPress,
     handleEquals: calculatorHandleEquals,
+    handleClear: calculatorHandleClear,
+    handleAllClear: calculatorHandleAllClear,
+    handleBackspace: calculatorHandleBackspace,
+    handleNegative: calculatorHandleNegative,
     restoreState,
     state: calculatorState,
   } = calculator;
@@ -160,7 +164,7 @@ export default function CalculatorScreen() {
         restoreState(newState);
       });
     }
-  }, [restoreState, undoRedo]);
+  }, [restoreState, undoRedo.canUndo, undoRedo.undo]);
 
   /**
    * Handle redo
@@ -171,7 +175,7 @@ export default function CalculatorScreen() {
         restoreState(newState);
       });
     }
-  }, [restoreState, undoRedo]);
+  }, [restoreState, undoRedo.canRedo, undoRedo.redo]);
 
   /**
    * Handle mode change
@@ -194,7 +198,7 @@ export default function CalculatorScreen() {
    */
   const handleHistoryItemSelect = useCallback((item: CalculationHistory) => {
     // Restore the calculation result to display
-    calculator.restoreState({
+    restoreState({
       display: item.displayResult,
       expression: item.expression,
       previousValue: null,
@@ -203,15 +207,15 @@ export default function CalculatorScreen() {
       error: false,
       errorMessage: '',
     });
-  }, [calculator]);
+  }, [restoreState]);
 
   /**
    * Handle error modal undo
    */
   const handleErrorUndo = useCallback(() => {
-    calculator.handleAllClear();
+    calculatorHandleAllClear();
     handleUndo();
-  }, [calculator, handleUndo]);
+  }, [calculatorHandleAllClear, handleUndo]);
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -272,10 +276,10 @@ export default function CalculatorScreen() {
         {/* Display */}
         <View style={styles.displaySection}>
           <Display
-            value={calculator.state.display}
-            expression={calculator.state.expression}
-            error={calculator.state.error}
-            errorMessage={calculator.state.errorMessage}
+            value={calculatorState.display}
+            expression={calculatorState.expression}
+            error={calculatorState.error}
+            errorMessage={calculatorState.errorMessage}
             lcdColor={settings.lcdColor}
             mode={settings.mode}
             currencySymbol={settings.currencySymbol}
@@ -290,12 +294,12 @@ export default function CalculatorScreen() {
             onDecimalPress={handleDecimal}
             onOperatorPress={handleOperatorPress}
             onEqualsPress={handleEquals}
-            onClear={calculator.handleClear}
-            onAllClear={calculator.handleAllClear}
-            onBackspace={calculator.handleBackspace}
+            onClear={calculatorHandleClear}
+            onAllClear={calculatorHandleAllClear}
+            onBackspace={calculatorHandleBackspace}
             onUndo={handleUndo}
             onRedo={handleRedo}
-            onNegativeToggle={calculator.handleNegative}
+            onNegativeToggle={calculatorHandleNegative}
             canUndo={undoRedo.canUndo()}
             canRedo={undoRedo.canRedo()}
           />
@@ -304,9 +308,9 @@ export default function CalculatorScreen() {
 
       {/* Error Modal */}
       <ErrorModal
-        visible={calculator.state.error}
-        errorMessage={calculator.state.errorMessage}
-        onDismiss={() => calculator.handleAllClear()}
+        visible={calculatorState.error}
+        errorMessage={calculatorState.errorMessage}
+        onDismiss={calculatorHandleAllClear}
         onUndo={handleErrorUndo}
         showUndoButton={true}
       />
