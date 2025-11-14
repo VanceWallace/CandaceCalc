@@ -82,7 +82,7 @@ export default function CalculatorScreen() {
    */
   useEffect(() => {
     undoRedo.pushState(calculator.state);
-  }, [calculator.state, undoRedo]);
+  }, [calculator.state]);
 
   /**
    * Handle number button press
