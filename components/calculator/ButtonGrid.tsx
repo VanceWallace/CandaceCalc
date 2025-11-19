@@ -20,6 +20,7 @@ interface ButtonGridProps {
   onBackspace: () => void;
   onUndo: () => void;
   onRedo: () => void;
+  onNegativeToggle: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -35,6 +36,7 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
   onBackspace,
   onUndo,
   onRedo,
+  onNegativeToggle,
   canUndo = false,
   canRedo = false,
 }) => {
@@ -72,6 +74,10 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
           break;
         case '⟳':
           if (canRedo) onRedo();
+          break;
+        case '+/-':
+        case '±':
+          onNegativeToggle();
           break;
         default:
           // Ignore empty buttons or unhandled cases
