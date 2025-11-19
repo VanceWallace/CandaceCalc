@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar, useWindowDimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Components
@@ -13,12 +13,13 @@ import { ButtonGrid } from '@/components/calculator/ButtonGrid';
 import { ReceiptTape } from '@/components/calculator/ReceiptTape';
 import { ErrorModal } from '@/components/calculator/ErrorModal';
 import { UndoRedoIndicator } from '@/components/calculator/UndoRedoIndicator';
+import { ModeSwitch } from '@/components/calculator/ModeSwitch';
 
 // Hooks
 import { useUndoRedo } from '@/hooks/calculator/useUndoRedo';
 
 // Utils and constants
-import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
+import { CalculatorEngine } from '@/utils/calculator';
 import { RetroColors } from '@/constants/Colors';
 import {
   loadSettings,
@@ -53,12 +54,17 @@ export default function CalculatorScreen() {
 
   const [history, setHistory] = useState<CalculationHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
+  const [showModeWarning, setShowModeWarning] = useState(false);
+  const [newMode, setNewMode] = useState<'checkbook' | 'scientific'>('checkbook');
 
   // Calculator state - inlined from useCalculator hook
   const [calculatorState, setCalculatorState] = useState<CalculatorState>(INITIAL_CALCULATOR_STATE);
 
   // Undo/Redo functionality
   const undoRedo = useUndoRedo(calculatorState);
+
+  // Get screen dimensions for responsive layout
+  const { height: screenHeight } = useWindowDimensions();
 
   /**
    * Load settings and history on app start
