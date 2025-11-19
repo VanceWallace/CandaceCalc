@@ -12,6 +12,7 @@ import {
   Text,
   ActivityIndicator,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { CalculationHistory } from '@/types/calculator';
 import { RetroColors } from '@/constants/Colors';
@@ -68,11 +69,18 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
       borderColor: RetroColors.casingBrown,
       overflow: 'hidden',
       marginBottom: 12,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
+      ...Platform.select({
+        web: {
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
+        },
+        default: {
+          elevation: 2,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.2,
+          shadowRadius: 2,
+        },
+      }),
     },
     header: {
       backgroundColor: RetroColors.casingBrown,

@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect } from 'react';
-import { StyleSheet, Modal, View, Text, Pressable, Dimensions } from 'react-native';
+import { StyleSheet, Modal, View, Text, Pressable, Dimensions, Platform } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { ERROR_MESSAGE_TIMEOUT } from '@/constants/calculator';
 
@@ -57,14 +57,21 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
       paddingHorizontal: 24,
       paddingVertical: 32,
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: {
-        width: 0,
-        height: 2,
-      },
-      shadowOpacity: 0.25,
-      shadowRadius: 4,
-      elevation: 5,
+      ...Platform.select({
+        web: {
+          boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.25)',
+        },
+        default: {
+          shadowColor: '#000',
+          shadowOffset: {
+            width: 0,
+            height: 2,
+          },
+          shadowOpacity: 0.25,
+          shadowRadius: 4,
+          elevation: 5,
+        },
+      }),
       borderWidth: 3,
       borderColor: RetroColors.casingBrown,
       maxHeight: windowHeight * 0.7,
@@ -104,11 +111,18 @@ export const ErrorModal: React.FC<ErrorModalProps> = ({
       borderLeftColor: RetroColors.shadowLight,
       borderBottomColor: RetroColors.shadowDark,
       borderRightColor: RetroColors.shadowDark,
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
+      ...Platform.select({
+        web: {
+          boxShadow: '2px 2px 3px rgba(0, 0, 0, 0.3)',
+        },
+        default: {
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 3,
+        },
+      }),
     },
     undoButton: {
       backgroundColor: RetroColors.buttonOrange,

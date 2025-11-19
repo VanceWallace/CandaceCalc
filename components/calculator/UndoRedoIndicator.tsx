@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, Animated } from 'react-native';
+import { StyleSheet, View, Text, Animated, Platform } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { UNDO_REDO_TIMEOUT } from '@/constants/calculator';
 
@@ -60,11 +60,18 @@ export const UndoRedoIndicator: React.FC<UndoRedoIndicatorProps> = ({
       alignItems: 'center',
       borderBottomWidth: 2,
       borderBottomColor: RetroColors.casingDark,
-      elevation: 3,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.25,
-      shadowRadius: 3,
+      ...Platform.select({
+        web: {
+          boxShadow: '0px 2px 3px rgba(0, 0, 0, 0.25)',
+        },
+        default: {
+          elevation: 3,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.25,
+          shadowRadius: 3,
+        },
+      }),
     },
     text: {
       color: RetroColors.textLight,

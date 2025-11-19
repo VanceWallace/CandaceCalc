@@ -10,6 +10,7 @@ import {
   ViewStyle,
   Pressable,
   useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { BUTTON_SIZE, BUTTON_GAP } from '@/constants/calculator';
@@ -117,11 +118,20 @@ export const Button: React.FC<ButtonProps> = ({
     borderLeftColor: pressed ? colors.shadowDark : colors.shadowLight,
     borderBottomColor: pressed ? colors.shadowLight : colors.shadowDark,
     borderRightColor: pressed ? colors.shadowLight : colors.shadowDark,
-    elevation: pressed ? 0 : 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 2, height: 2 },
-    shadowOpacity: pressed ? 0.2 : 0.4,
-    shadowRadius: pressed ? 1 : 3,
+    ...Platform.select({
+      web: {
+        boxShadow: pressed
+          ? '1px 1px 1px rgba(0, 0, 0, 0.2)'
+          : '2px 2px 3px rgba(0, 0, 0, 0.4)',
+      },
+      default: {
+        elevation: pressed ? 0 : 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: pressed ? 0.2 : 0.4,
+        shadowRadius: pressed ? 1 : 3,
+      },
+    }),
     transform: [{ translateY: pressed ? 2 : 0 }],
   };
 
