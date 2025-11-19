@@ -10,8 +10,9 @@ import {
   View,
   FlatList,
   Text,
-  Dimensions,
   ActivityIndicator,
+  useWindowDimensions,
+  Platform,
 } from 'react-native';
 import { CalculationHistory } from '@/types/calculator';
 import { RetroColors } from '@/constants/Colors';
@@ -30,7 +31,7 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
   isLoading = false,
   mode = 'checkbook',
 }) => {
-  const windowHeight = Dimensions.get('window').height;
+  const { height: windowHeight } = useWindowDimensions();
   const maxHeight = Math.min(windowHeight * 0.35, 300);
 
   // Determine if entry is an addition or subtraction (for color coding in checkbook mode)
@@ -68,11 +69,18 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
       borderColor: RetroColors.casingBrown,
       overflow: 'hidden',
       marginBottom: 12,
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.2,
-      shadowRadius: 2,
+      ...Platform.select({
+        web: {
+          boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
+        },
+        default: {
+          elevation: 2,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.2,
+          shadowRadius: 2,
+        },
+      }),
     },
     header: {
       backgroundColor: RetroColors.casingBrown,
@@ -152,7 +160,6 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
           keyExtractor={(item) => item.id}
           ListEmptyComponent={renderEmpty}
           scrollEnabled={history.length > 3}
-          nestedScrollEnabled={true}
           showsVerticalScrollIndicator={true}
           scrollIndicatorInsets={{ right: 1 }}
           // Note: FlatList is rendered in normal order (newest first due to our data ordering)

@@ -13,13 +13,12 @@ import { ButtonGrid } from '@/components/calculator/ButtonGrid';
 import { ReceiptTape } from '@/components/calculator/ReceiptTape';
 import { ErrorModal } from '@/components/calculator/ErrorModal';
 import { UndoRedoIndicator } from '@/components/calculator/UndoRedoIndicator';
-import { ModeSwitch } from '@/components/calculator/ModeSwitch';
 
 // Hooks
 import { useUndoRedo } from '@/hooks/calculator/useUndoRedo';
 
 // Utils and constants
-import { CalculatorEngine } from '@/utils/calculator';
+import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
 import { RetroColors } from '@/constants/Colors';
 import {
   loadSettings,
@@ -54,8 +53,6 @@ export default function CalculatorScreen() {
 
   const [history, setHistory] = useState<CalculationHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  const [showModeWarning, setShowModeWarning] = useState(false);
-  const [newMode, setNewMode] = useState<'checkbook' | 'scientific'>('checkbook');
 
   // Calculator state - inlined from useCalculator hook
   const [calculatorState, setCalculatorState] = useState<CalculatorState>(INITIAL_CALCULATOR_STATE);
@@ -417,6 +414,10 @@ export default function CalculatorScreen() {
     handleUndo();
   };
 
+  // Calculate responsive heights for 3-section layout
+  const historyHeight = Math.max(screenHeight * 0.25, 120); // 25% of screen, min 120px
+  const displayHeight = Platform.select({ web: 140, default: 120 }); // Fixed display height
+
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -425,23 +426,24 @@ export default function CalculatorScreen() {
     container: {
       flex: 1,
       backgroundColor: RetroColors.casingBeige,
-    },
-    contentContainer: {
-      flexGrow: 1,
       paddingHorizontal: 12,
-      paddingTop: 12,
+      paddingTop: 8,
       paddingBottom: 8,
     },
+    // Section 1: History - Fixed height, scrollable
     receiptSection: {
-      minHeight: 150,
+      height: historyHeight,
       marginBottom: 12,
     },
+    // Section 2: Display - Fixed height
     displaySection: {
-      marginBottom: 8,
+      height: displayHeight,
+      marginBottom: 12,
     },
+    // Section 3: Buttons - Takes remaining space
     buttonSection: {
       flex: 1,
-      justifyContent: 'flex-end',
+      minHeight: 300, // Ensure buttons always have space
     },
   });
 
@@ -513,16 +515,6 @@ export default function CalculatorScreen() {
         onDismiss={handleAllClear}
         onUndo={handleErrorUndo}
         showUndoButton={true}
-      />
-
-      {/* Mode Switch Warning */}
-      <ModeSwitch
-        visible={showModeWarning}
-        newMode={newMode}
-        onDismiss={() => {
-          setShowModeWarning(false);
-          setSettings((prev) => ({ ...prev, mode: newMode }));
-        }}
       />
     </SafeAreaView>
   );

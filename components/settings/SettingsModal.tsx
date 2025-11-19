@@ -13,6 +13,7 @@ import {
   Pressable,
   Switch,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { RetroColors } from '@/constants/Colors';
 import { AppSettings, CalculatorMode, LcdColor } from '@/types/calculator';
@@ -161,11 +162,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       borderLeftColor: RetroColors.shadowLight,
       borderBottomColor: RetroColors.shadowDark,
       borderRightColor: RetroColors.shadowDark,
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 2, height: 2 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
+      ...Platform.select({
+        web: {
+          boxShadow: '2px 2px 3px rgba(0, 0, 0, 0.3)',
+        },
+        default: {
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 2, height: 2 },
+          shadowOpacity: 0.3,
+          shadowRadius: 3,
+        },
+      }),
       marginTop: 20,
       alignItems: 'center',
     },

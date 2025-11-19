@@ -72,7 +72,7 @@ export function useUndoRedo(initialState: CalculatorState) {
                             'changed to';
 
         setFeedback({
-          message: `↶ Undid last operation${previousState.operation ? ': ' + operationText : ''}`,
+          message: `⟲ Undid last operation${previousState.operation ? ': ' + operationText : ''}`,
           isUndo: true,
         });
 
@@ -103,7 +103,7 @@ export function useUndoRedo(initialState: CalculatorState) {
         const nextState = prev.stack[newIndex];
 
         setFeedback({
-          message: `↷ Redid operation`,
+          message: `⟳ Redid operation`,
           isUndo: false,
         });
 

@@ -4,7 +4,7 @@
  */
 
 import React, { useMemo } from 'react';
-import { View, Text, useWindowDimensions } from 'react-native';
+import { View, Text, useWindowDimensions, Platform } from 'react-native';
 import { RetroColors, AmberLcdPalette, GreenLcdPalette } from '@/constants/Colors';
 import { LcdColor, CalculatorMode } from '@/types/calculator';
 
@@ -52,11 +52,18 @@ export const Display: React.FC<DisplayProps> = ({
       marginBottom: 16,
       borderWidth: 3,
       borderColor: RetroColors.casingBrown,
-      elevation: 4,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 4,
+      ...Platform.select({
+        web: {
+          boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.3)',
+        },
+        default: {
+          elevation: 4,
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 4,
+        },
+      }),
     } as const,
     displayText: {
       color: error ? RetroColors.errorRed : lcdPalette.display,
@@ -64,9 +71,16 @@ export const Display: React.FC<DisplayProps> = ({
       fontFamily: 'monospace',
       textAlign: 'right' as const,
       fontWeight: '500' as const,
-      textShadowColor: error ? 'transparent' : lcdPalette.glow,
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: error ? 0 : 8,
+      ...Platform.select({
+        web: {
+          textShadow: error ? 'none' : `0px 0px 8px ${lcdPalette.glow}`,
+        },
+        default: {
+          textShadowColor: error ? 'transparent' : lcdPalette.glow,
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: error ? 0 : 8,
+        },
+      }),
       letterSpacing: 1,
     } as const,
     modeLabel: {

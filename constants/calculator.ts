@@ -13,22 +13,14 @@ export const ERROR_MESSAGE_TIMEOUT = 5000; // 5 seconds
 export const MODE_SWITCH_TIMEOUT = 5000; // 5 seconds
 
 // Checkbook mode button layout
+// Simplified for checkbook balancing - no memory or negative numbers
+// Using horizontal undo/redo arrows: ⟲ (undo left) and ⟳ (redo right)
 export const CHECKBOOK_LAYOUT = [
   ['7', '8', '9', '÷', '←'],
-  ['4', '5', '6', '×', '↶'],
-  ['1', '2', '3', '-', '↷'],
-  ['0', '.', '+/-', '+', '='],
-  ['AC', 'C', 'M+', 'M-', 'MR'],
-];
-
-// Scientific mode button layout (expanded)
-export const SCIENTIFIC_LAYOUT = [
-  ['√', '%', 'x²', '(', ')'],
-  ['7', '8', '9', '÷', '←'],
-  ['4', '5', '6', '×', '↶'],
-  ['1', '2', '3', '-', '↷'],
-  ['0', '.', '+/-', '+', '='],
-  ['AC', 'C', 'M+', 'M-', 'MR'],
+  ['4', '5', '6', '×', '⟲'],
+  ['1', '2', '3', '-', '⟳'],
+  ['0', '.', 'AC', '+', '='],
+  ['C', '', '', '', ''],  // Placeholder row for future features
 ];
 
 // Button type categories for styling
@@ -56,7 +48,6 @@ export const BUTTON_CATEGORIES: Record<string, string> = {
   '8': BUTTON_TYPES.NUMBER,
   '9': BUTTON_TYPES.NUMBER,
   '.': BUTTON_TYPES.FUNCTION,
-  '+/-': BUTTON_TYPES.FUNCTION,
 
   // Operators
   '+': BUTTON_TYPES.OPERATOR,
@@ -72,21 +63,9 @@ export const BUTTON_CATEGORIES: Record<string, string> = {
   'C': BUTTON_TYPES.CONTROL,
   '←': BUTTON_TYPES.CONTROL,
 
-  // Undo/Redo
-  '↶': BUTTON_TYPES.UNDO_REDO,
-  '↷': BUTTON_TYPES.UNDO_REDO,
-
-  // Memory
-  'M+': BUTTON_TYPES.MEMORY,
-  'M-': BUTTON_TYPES.MEMORY,
-  'MR': BUTTON_TYPES.MEMORY,
-
-  // Scientific
-  '√': BUTTON_TYPES.FUNCTION,
-  '%': BUTTON_TYPES.FUNCTION,
-  'x²': BUTTON_TYPES.FUNCTION,
-  '(': BUTTON_TYPES.FUNCTION,
-  ')': BUTTON_TYPES.FUNCTION,
+  // Undo/Redo (horizontal arrows)
+  '⟲': BUTTON_TYPES.UNDO_REDO,
+  '⟳': BUTTON_TYPES.UNDO_REDO,
 };
 
 // Sound effect configuration
