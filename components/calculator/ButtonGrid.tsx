@@ -6,7 +6,7 @@
 import React, { useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Button } from './Button';
-import { CHECKBOOK_LAYOUT, SCIENTIFIC_LAYOUT, BUTTON_GAP } from '@/constants/calculator';
+import { CHECKBOOK_LAYOUT, BUTTON_GAP } from '@/constants/calculator';
 import { CalculatorMode } from '@/types/calculator';
 
 interface ButtonGridProps {
@@ -20,10 +20,6 @@ interface ButtonGridProps {
   onBackspace: () => void;
   onUndo: () => void;
   onRedo: () => void;
-  onMemoryAdd?: () => void;
-  onMemorySubtract?: () => void;
-  onMemoryRecall?: () => void;
-  onNegativeToggle: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
 }
@@ -39,14 +35,10 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
   onBackspace,
   onUndo,
   onRedo,
-  onMemoryAdd,
-  onMemorySubtract,
-  onMemoryRecall,
-  onNegativeToggle,
   canUndo = false,
   canRedo = false,
 }) => {
-  const buttonLayout = mode === 'checkbook' ? CHECKBOOK_LAYOUT : SCIENTIFIC_LAYOUT;
+  const buttonLayout = CHECKBOOK_LAYOUT; // Only checkbook mode now
 
   const handleButtonPress = (label: string) => {
     const numValue = parseInt(label);
@@ -75,30 +67,14 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
         case '←':
           onBackspace();
           break;
-        case '↶':
+        case '⟲':
           if (canUndo) onUndo();
           break;
-        case '↷':
+        case '⟳':
           if (canRedo) onRedo();
           break;
-        case '+/-':
-          onNegativeToggle();
-          break;
-        case 'M+':
-          if (onMemoryAdd) onMemoryAdd();
-          break;
-        case 'M-':
-          if (onMemorySubtract) onMemorySubtract();
-          break;
-        case 'MR':
-          if (onMemoryRecall) onMemoryRecall();
-          break;
-        case '√':
-        case '%':
-        case 'x²':
-        case '(':
-        case ')':
-          // Scientific functions - can be implemented later
+        default:
+          // Ignore empty buttons or unhandled cases
           break;
       }
     }
@@ -111,12 +87,13 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
     },
     row: {
       flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'flex-start',
-      marginHorizontal: -BUTTON_GAP / 2,
+      flexWrap: 'nowrap',  // Changed from 'wrap' to prevent Android reflow issues
+      justifyContent: 'space-between',  // Better distribution across all platforms
+      marginBottom: BUTTON_GAP,
     },
     buttonWrapper: {
-      flex: 0,
+      // Removed flex: 0 which was collapsing buttons on web
+      // Button component handles its own sizing internally
     },
   });
 
@@ -124,18 +101,24 @@ export const ButtonGrid: React.FC<ButtonGridProps> = ({
     <View style={styles.container}>
       {buttonLayout.map((row, rowIndex) => (
         <View key={`row-${rowIndex}`} style={styles.row}>
-          {row.map((label) => (
-            <View key={`button-${label}-${rowIndex}`} style={styles.buttonWrapper}>
-              <Button
-                label={label}
-                onPress={() => handleButtonPress(label)}
-                disabled={
-                  (label === '↶' && !canUndo) ||
-                  (label === '↷' && !canRedo)
-                }
-              />
-            </View>
-          ))}
+          {row.map((label, colIndex) => {
+            // Skip empty button placeholders
+            if (label === '') {
+              return <View key={`empty-${rowIndex}-${colIndex}`} style={styles.buttonWrapper} />;
+            }
+            return (
+              <View key={`button-${label}-${rowIndex}`} style={styles.buttonWrapper}>
+                <Button
+                  label={label}
+                  onPress={() => handleButtonPress(label)}
+                  disabled={
+                    (label === '⟲' && !canUndo) ||
+                    (label === '⟳' && !canRedo)
+                  }
+                />
+              </View>
+            );
+          })}
         </View>
       ))}
     </View>

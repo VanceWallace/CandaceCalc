@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { StyleSheet, View, StatusBar } from 'react-native';
+import { StyleSheet, View, StatusBar, useWindowDimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 // Components
@@ -31,6 +31,8 @@ import {
 import { CalculationHistory, AppSettings, CalculatorState } from '@/types/calculator';
 
 export default function CalculatorScreen() {
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
+
   const [settings, setSettings] = useState<AppSettings>({
     mode: 'checkbook',
     lcdColor: 'amber',
@@ -83,7 +85,6 @@ export default function CalculatorScreen() {
     handleClear: calculatorHandleClear,
     handleAllClear: calculatorHandleAllClear,
     handleBackspace: calculatorHandleBackspace,
-    handleNegative: calculatorHandleNegative,
     restoreState,
     state: calculatorState,
   } = calculator;
@@ -231,6 +232,10 @@ export default function CalculatorScreen() {
     handleUndo();
   }, [calculatorHandleAllClear, handleUndo]);
 
+  // Calculate responsive heights for 3-section layout
+  const historyHeight = Math.max(screenHeight * 0.25, 120); // 25% of screen, min 120px
+  const displayHeight = Platform.select({ web: 140, default: 120 }); // Fixed display height
+
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -239,23 +244,24 @@ export default function CalculatorScreen() {
     container: {
       flex: 1,
       backgroundColor: RetroColors.casingBeige,
-    },
-    contentContainer: {
-      flexGrow: 1,
       paddingHorizontal: 12,
-      paddingTop: 12,
+      paddingTop: 8,
       paddingBottom: 8,
     },
+    // Section 1: History - Fixed height, scrollable
     receiptSection: {
-      minHeight: 150,
+      height: historyHeight,
       marginBottom: 12,
     },
+    // Section 2: Display - Fixed height
     displaySection: {
-      marginBottom: 8,
+      height: displayHeight,
+      marginBottom: 12,
     },
+    // Section 3: Buttons - Takes remaining space
     buttonSection: {
       flex: 1,
-      justifyContent: 'flex-end',
+      minHeight: 300, // Ensure buttons always have space
     },
   });
 
@@ -313,7 +319,6 @@ export default function CalculatorScreen() {
             onBackspace={calculatorHandleBackspace}
             onUndo={handleUndo}
             onRedo={handleRedo}
-            onNegativeToggle={calculatorHandleNegative}
             canUndo={undoRedo.canUndo()}
             canRedo={undoRedo.canRedo()}
           />

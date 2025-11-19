@@ -37,7 +37,7 @@ export class CalculatorEngine {
             return {
               result: 0,
               error: true,
-              errorMessage: 'Cannot divide by zero. This would create an infinite number. Press C to start fresh or ↶ to undo.',
+              errorMessage: 'Cannot divide by zero. This would create an infinite number. Press C to start fresh or ⟲ to undo.',
             };
           }
           result = firstValue / secondValue;

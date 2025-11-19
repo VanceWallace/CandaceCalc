@@ -238,6 +238,7 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
 
   /**
    * Handle Clear (C) - Clear current input
+   * Fixed: Added setState to dependencies for iOS compatibility
    */
   const handleClear = useCallback(() => {
     setState((prev) => ({
@@ -247,7 +248,7 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
       error: false,
       errorMessage: '',
     }));
-  }, []);
+  }, [setState]);
 
   /**
    * Handle All Clear (AC) - Reset everything
