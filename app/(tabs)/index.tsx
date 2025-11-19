@@ -110,7 +110,7 @@ export default function CalculatorScreen() {
    * Handle number button press
    */
   const handleNumberPress = (digit: string) => {
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error) {
         return {
           ...INITIAL_CALCULATOR_STATE,
@@ -147,7 +147,7 @@ export default function CalculatorScreen() {
    * Handle decimal point press
    */
   const handleDecimal = () => {
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error) {
         return {
           ...INITIAL_CALCULATOR_STATE,
@@ -180,7 +180,7 @@ export default function CalculatorScreen() {
   const handleOperatorPress = (op: string) => {
     const newOperation = op as Operation;
 
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error) {
         return prev;
       }
@@ -240,7 +240,7 @@ export default function CalculatorScreen() {
    * Handle equals button press and save to history
    */
   const handleEquals = () => {
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error || prev.operation === null || prev.previousValue === null) {
         return prev;
       }
@@ -278,7 +278,7 @@ export default function CalculatorScreen() {
       saveCalculationToHistory(expression, result, displayResult)
         .then((newItem) => {
           if (newItem) {
-            setHistory((prevHistory) => [newItem, ...prevHistory]);
+            setHistory((prevHistory: CalculationHistory[]) => [newItem, ...prevHistory]);
             if (settings.mode === 'checkbook') {
               saveLastBalance(result);
             }
@@ -303,7 +303,7 @@ export default function CalculatorScreen() {
    * Handle backspace
    */
   const handleBackspace = () => {
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error || prev.waitingForOperand) {
         return prev;
       }
@@ -320,7 +320,7 @@ export default function CalculatorScreen() {
    * Handle Clear (C) - Clear current input
    */
   const handleClear = () => {
-    setCalculatorState((prev) => ({
+    setCalculatorState((prev: CalculatorState) => ({
       ...prev,
       display: '0',
       waitingForOperand: true,
@@ -340,7 +340,7 @@ export default function CalculatorScreen() {
    * Handle positive/negative toggle
    */
   const handleNegative = () => {
-    setCalculatorState((prev) => {
+    setCalculatorState((prev: CalculatorState) => {
       if (prev.error) return prev;
 
       const value = CalculatorEngine.getDisplayValue(prev.display);
@@ -387,7 +387,7 @@ export default function CalculatorScreen() {
       setNewMode(mode);
       setShowModeWarning(true);
     } else {
-      setSettings((prev) => ({ ...prev, mode }));
+      setSettings((prev: AppSettings) => ({ ...prev, mode }));
     }
   };
 
@@ -515,6 +515,16 @@ export default function CalculatorScreen() {
         onDismiss={handleAllClear}
         onUndo={handleErrorUndo}
         showUndoButton={true}
+      />
+
+      {/* Mode Switch Warning */}
+      <ModeSwitch
+        visible={showModeWarning}
+        newMode={newMode}
+        onDismiss={() => {
+          setShowModeWarning(false);
+          setSettings((prev: AppSettings) => ({ ...prev, mode: newMode }));
+        }}
       />
     </SafeAreaView>
   );
