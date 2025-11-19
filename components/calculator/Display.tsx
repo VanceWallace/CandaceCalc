@@ -29,8 +29,9 @@ export const Display: React.FC<DisplayProps> = ({
 }) => {
   const { width: screenWidth } = useWindowDimensions();
 
-  // Show expression if available, otherwise show value
-  const displayContent = expression || value;
+  // Show current value while typing, only show full expression after equals
+  // Expression with "=" means calculation is complete, otherwise show current input
+  const displayContent = expression && expression.includes('=') ? expression : value;
 
   // Calculate font size based on screen width and content length
   const baseFontSize = Math.min(screenWidth * 0.1, 48);

@@ -14,7 +14,11 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nFix calculator display, layout, and responsiveness issues\n\nMajor fixes:\n- Reordered layout: Receipt History now displays ABOVE Display ABOVE Buttons\n- Display now shows full calculation expression (e.g., \"12.00 - 10 =\")\n- UndoRedoIndicator repositioned to push content down instead of overlay\n- Receipt history now always visible with minimum height on iOS\n- Made buttons responsive to screen width (scales from 16% to 18% of width)\n- Improved font sizing for expressions to fit longer calculations\n\nTechnical Changes:\n- Added ''expression'' field to CalculatorState type\n- Updated useCalculator hook to track and build expressions\n- Modified Display component to show expression or current value\n- Fixed Button component to use dynamic sizing based on screen width\n- Moved UndoRedoIndicator inside SafeAreaView for proper layout flow\n\nAccessibility Improvements:\n- Display automatically scales text for long expressions\n- Buttons scale responsively to device screen size\n- Undo/redo feedback now properly visible on all devices\n- History tape always accessible without requiring scroll\n\n🤖 Generated with Claude Code\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(timeout 30 git push:*)",
       "Bash(git commit:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)",
+      "Bash(npx jest --version)",
+      "Bash(npx jest __tests__/unit/utils/calculator.test.ts --maxWorkers=1 --testEnvironment=node --no-coverage)"
     ],
     "deny": [],
     "ask": []

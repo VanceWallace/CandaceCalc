@@ -45,16 +45,20 @@ export function useCalculator(mode: CalculatorMode = 'checkbook') {
       }
 
       // Append digit to existing display
-      if (prev.display === '0' && digit !== '.') {
-        return {
-          ...prev,
-          display: digit,
-        };
+      const potentialDisplay = prev.display === '0' && digit !== '.'
+        ? digit
+        : prev.display + digit;
+
+      // Validate that the new value won't exceed maximum
+      const potentialValue = CalculatorEngine.getDisplayValue(potentialDisplay);
+      if (Math.abs(potentialValue) > 999999999.99) {
+        // Don't allow this input - number would be too large
+        return prev;
       }
 
       return {
         ...prev,
-        display: prev.display + digit,
+        display: potentialDisplay,
       };
     });
   }, []);

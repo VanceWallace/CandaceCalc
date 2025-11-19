@@ -3,7 +3,7 @@
  * Retro 1980s calculator for checkbook balancing
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
@@ -92,6 +92,30 @@ export default function CalculatorScreen() {
     restoreState,
     state: calculatorState,
   } = calculator;
+
+  /**
+   * Track calculator state changes for undo/redo
+   * Uses ref to avoid infinite loops while still capturing state changes
+   */
+  const prevStateRef = useRef<CalculatorState | null>(null);
+  useEffect(() => {
+    // Skip on initial mount
+    if (prevStateRef.current === null) {
+      prevStateRef.current = calculatorState;
+      return;
+    }
+
+    // Only push to undo stack if display or operation actually changed
+    const stateChanged =
+      prevStateRef.current.display !== calculatorState.display ||
+      prevStateRef.current.operation !== calculatorState.operation ||
+      prevStateRef.current.previousValue !== calculatorState.previousValue;
+
+    if (stateChanged && !calculatorState.error) {
+      undoRedo.pushState(calculatorState);
+      prevStateRef.current = calculatorState;
+    }
+  }, [calculatorState.display, calculatorState.operation, calculatorState.previousValue, undoRedo.pushState]);
 
   /**
    * Handle number button press
