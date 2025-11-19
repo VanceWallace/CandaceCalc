@@ -3,10 +3,9 @@
  * Retro 1980s calculator for checkbook balancing
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 
 // Components
 import { Display } from '@/components/calculator/Display';
@@ -17,7 +16,6 @@ import { UndoRedoIndicator } from '@/components/calculator/UndoRedoIndicator';
 import { ModeSwitch } from '@/components/calculator/ModeSwitch';
 
 // Hooks
-import { useCalculator } from '@/hooks/calculator/useCalculator';
 import { useUndoRedo } from '@/hooks/calculator/useUndoRedo';
 
 // Utils and constants
@@ -30,10 +28,21 @@ import {
   autoCleanupHistory,
   saveLastBalance,
 } from '@/utils/storage';
-import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
-import { CalculationHistory, AppSettings, CalculatorState } from '@/types/calculator';
+import { CalculationHistory, AppSettings, CalculatorState, Operation } from '@/types/calculator';
+
+// Initial calculator state
+const INITIAL_CALCULATOR_STATE: CalculatorState = {
+  display: '0',
+  expression: '',
+  previousValue: null,
+  operation: null,
+  waitingForOperand: false,
+  error: false,
+  errorMessage: '',
+};
 
 export default function CalculatorScreen() {
+  // Settings and UI state
   const [settings, setSettings] = useState<AppSettings>({
     mode: 'checkbook',
     lcdColor: 'amber',
@@ -48,9 +57,11 @@ export default function CalculatorScreen() {
   const [showModeWarning, setShowModeWarning] = useState(false);
   const [newMode, setNewMode] = useState<'checkbook' | 'scientific'>('checkbook');
 
-  // Calculator logic
-  const calculator = useCalculator(settings.mode);
-  const undoRedo = useUndoRedo(calculator.state);
+  // Calculator state - inlined from useCalculator hook
+  const [calculatorState, setCalculatorState] = useState<CalculatorState>(INITIAL_CALCULATOR_STATE);
+
+  // Undo/Redo functionality
+  const undoRedo = useUndoRedo(calculatorState);
 
   /**
    * Load settings and history on app start
@@ -78,34 +89,15 @@ export default function CalculatorScreen() {
   }, []);
 
   /**
-   * Destructure functions to avoid entire object as dependency
-   */
-  const {
-    handleNumberPress: calculatorHandleNumberPress,
-    handleDecimal: calculatorHandleDecimal,
-    handleOperatorPress: calculatorHandleOperatorPress,
-    handleEquals: calculatorHandleEquals,
-    handleClear: calculatorHandleClear,
-    handleAllClear: calculatorHandleAllClear,
-    handleBackspace: calculatorHandleBackspace,
-    handleNegative: calculatorHandleNegative,
-    restoreState,
-    state: calculatorState,
-  } = calculator;
-
-  /**
    * Track calculator state changes for undo/redo
-   * Uses ref to avoid infinite loops while still capturing state changes
    */
   const prevStateRef = useRef<CalculatorState | null>(null);
   useEffect(() => {
-    // Skip on initial mount
     if (prevStateRef.current === null) {
       prevStateRef.current = calculatorState;
       return;
     }
 
-    // Only push to undo stack if display or operation actually changed
     const stateChanged =
       prevStateRef.current.display !== calculatorState.display ||
       prevStateRef.current.operation !== calculatorState.operation ||
@@ -115,114 +107,298 @@ export default function CalculatorScreen() {
       undoRedo.pushState(calculatorState);
       prevStateRef.current = calculatorState;
     }
-  }, [calculatorState.display, calculatorState.operation, calculatorState.previousValue, undoRedo.pushState]);
+  }, [calculatorState, undoRedo.pushState]);
 
   /**
    * Handle number button press
    */
-  const handleNumberPress = useCallback((digit: string) => {
-    calculatorHandleNumberPress(digit);
-  }, [calculatorHandleNumberPress]);
-
-  /**
-   * Handle decimal press
-   */
-  const handleDecimal = useCallback(() => {
-    calculatorHandleDecimal();
-  }, [calculatorHandleDecimal]);
-
-  /**
-   * Handle operator press
-   */
-  const handleOperatorPress = useCallback((op: string) => {
-    calculatorHandleOperatorPress(op as any);
-  }, [calculatorHandleOperatorPress]);
-
-  /**
-   * Handle equals - this should also save to history
-   */
-  const handleEquals = useCallback(async () => {
-    const prevState = calculatorState;
-    calculatorHandleEquals();
-
-    // After equals, save to history if successful
-    setTimeout(() => {
-      if (!calculatorState.error && calculatorState.operation === null) {
-        const expression = CalcEngine.formatExpression(
-          prevState.previousValue || 0,
-          prevState.operation,
-          CalcEngine.getDisplayValue(prevState.display),
-          settings.currencySymbol
-        );
-
-        const result = CalcEngine.getDisplayValue(calculatorState.display);
-        const displayResult = CalcEngine.formatForDisplay(
-          result,
-          settings.mode,
-          settings.currencySymbol
-        );
-
-        // Save to history
-        saveCalculationToHistory(expression, result, displayResult)
-          .then((newItem) => {
-            if (newItem) {
-              setHistory((prev) => [newItem, ...prev]);
-
-              // Save last balance for checkbook mode
-              if (settings.mode === 'checkbook') {
-                saveLastBalance(result);
-              }
-            }
-          })
-          .catch((error) => console.error('Error saving to history:', error));
+  const handleNumberPress = (digit: string) => {
+    setCalculatorState((prev) => {
+      if (prev.error) {
+        return {
+          ...INITIAL_CALCULATOR_STATE,
+          display: digit,
+          waitingForOperand: false,
+        };
       }
-    }, 0);
-  }, [calculatorHandleEquals, calculatorState, settings]);
+
+      if (prev.waitingForOperand) {
+        return {
+          ...prev,
+          display: digit,
+          waitingForOperand: false,
+        };
+      }
+
+      const potentialDisplay = prev.display === '0' && digit !== '.'
+        ? digit
+        : prev.display + digit;
+
+      const potentialValue = CalculatorEngine.getDisplayValue(potentialDisplay);
+      if (Math.abs(potentialValue) > 999999999.99) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        display: potentialDisplay,
+      };
+    });
+  };
+
+  /**
+   * Handle decimal point press
+   */
+  const handleDecimal = () => {
+    setCalculatorState((prev) => {
+      if (prev.error) {
+        return {
+          ...INITIAL_CALCULATOR_STATE,
+          display: '0.',
+        };
+      }
+
+      if (prev.waitingForOperand) {
+        return {
+          ...prev,
+          display: '0.',
+          waitingForOperand: false,
+        };
+      }
+
+      if (prev.display.includes('.')) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        display: prev.display + '.',
+      };
+    });
+  };
+
+  /**
+   * Handle operator button press
+   */
+  const handleOperatorPress = (op: string) => {
+    const newOperation = op as Operation;
+
+    setCalculatorState((prev) => {
+      if (prev.error) {
+        return prev;
+      }
+
+      const currentValue = CalculatorEngine.getDisplayValue(prev.display);
+      const operatorSymbol = newOperation || '';
+
+      // If we have a previous value and operation, calculate first
+      if (prev.previousValue !== null && prev.operation && !prev.waitingForOperand) {
+        const { result, error, errorMessage } = CalculatorEngine.calculate(
+          prev.previousValue,
+          prev.operation,
+          currentValue,
+          settings.mode
+        );
+
+        if (error) {
+          return {
+            ...prev,
+            error: true,
+            errorMessage,
+            display: '0',
+            expression: '',
+          };
+        }
+
+        const displayResult = CalculatorEngine.formatForDisplay(result, settings.mode);
+        const newExpression = `${displayResult} ${operatorSymbol}`;
+
+        return {
+          ...prev,
+          display: displayResult,
+          expression: newExpression,
+          previousValue: result,
+          operation: newOperation,
+          waitingForOperand: true,
+          error: false,
+          errorMessage: '',
+        };
+      }
+
+      // No previous value yet, store current value
+      const newExpression = `${prev.display} ${operatorSymbol}`;
+      return {
+        ...prev,
+        previousValue: currentValue,
+        expression: newExpression,
+        operation: newOperation,
+        waitingForOperand: true,
+        error: false,
+        errorMessage: '',
+      };
+    });
+  };
+
+  /**
+   * Handle equals button press and save to history
+   */
+  const handleEquals = () => {
+    setCalculatorState((prev) => {
+      if (prev.error || prev.operation === null || prev.previousValue === null) {
+        return prev;
+      }
+
+      const currentValue = CalculatorEngine.getDisplayValue(prev.display);
+      const { result, error, errorMessage } = CalculatorEngine.calculate(
+        prev.previousValue,
+        prev.operation,
+        currentValue,
+        settings.mode
+      );
+
+      if (error) {
+        return {
+          ...prev,
+          error: true,
+          errorMessage,
+          display: '0',
+          expression: '',
+          waitingForOperand: true,
+        };
+      }
+
+      const displayResult = CalculatorEngine.formatForDisplay(result, settings.mode);
+      const fullExpression = `${prev.expression} ${prev.display} = ${displayResult}`;
+
+      // Save to history asynchronously
+      const expression = CalculatorEngine.formatExpression(
+        prev.previousValue,
+        prev.operation,
+        currentValue,
+        settings.currencySymbol
+      );
+
+      saveCalculationToHistory(expression, result, displayResult)
+        .then((newItem) => {
+          if (newItem) {
+            setHistory((prevHistory) => [newItem, ...prevHistory]);
+            if (settings.mode === 'checkbook') {
+              saveLastBalance(result);
+            }
+          }
+        })
+        .catch((error) => console.error('Error saving to history:', error));
+
+      return {
+        ...prev,
+        display: displayResult,
+        expression: fullExpression,
+        previousValue: result,
+        operation: null,
+        waitingForOperand: true,
+        error: false,
+        errorMessage: '',
+      };
+    });
+  };
+
+  /**
+   * Handle backspace
+   */
+  const handleBackspace = () => {
+    setCalculatorState((prev) => {
+      if (prev.error || prev.waitingForOperand) {
+        return prev;
+      }
+
+      const newDisplay = prev.display.slice(0, -1) || '0';
+      return {
+        ...prev,
+        display: newDisplay,
+      };
+    });
+  };
+
+  /**
+   * Handle Clear (C) - Clear current input
+   */
+  const handleClear = () => {
+    setCalculatorState((prev) => ({
+      ...prev,
+      display: '0',
+      waitingForOperand: true,
+      error: false,
+      errorMessage: '',
+    }));
+  };
+
+  /**
+   * Handle All Clear (AC) - Reset everything
+   */
+  const handleAllClear = () => {
+    setCalculatorState(INITIAL_CALCULATOR_STATE);
+  };
+
+  /**
+   * Handle positive/negative toggle
+   */
+  const handleNegative = () => {
+    setCalculatorState((prev) => {
+      if (prev.error) return prev;
+
+      const value = CalculatorEngine.getDisplayValue(prev.display);
+      const toggled = -value;
+      const display = toggled === 0 ? '0' : toggled.toString();
+
+      return {
+        ...prev,
+        display,
+      };
+    });
+  };
+
+  /**
+   * Restore calculator state (for undo/redo)
+   */
+  const restoreState = (newState: CalculatorState) => {
+    setCalculatorState(newState);
+  };
 
   /**
    * Handle undo
    */
-  const handleUndo = useCallback(() => {
+  const handleUndo = () => {
     if (undoRedo.canUndo()) {
-      undoRedo.undo((newState) => {
-        restoreState(newState);
-      });
+      undoRedo.undo(restoreState);
     }
-  }, [restoreState, undoRedo.canUndo, undoRedo.undo]);
+  };
 
   /**
    * Handle redo
    */
-  const handleRedo = useCallback(() => {
+  const handleRedo = () => {
     if (undoRedo.canRedo()) {
-      undoRedo.redo((newState) => {
-        restoreState(newState);
-      });
+      undoRedo.redo(restoreState);
     }
-  }, [restoreState, undoRedo.canRedo, undoRedo.redo]);
+  };
 
   /**
    * Handle mode change
    */
-  const handleModeChange = useCallback(
-    (newMode: 'checkbook' | 'scientific') => {
-      if (settings.showModeWarning) {
-        setNewMode(newMode);
-        setShowModeWarning(true);
-      } else {
-        // Silently switch mode
-        setSettings((prev) => ({ ...prev, mode: newMode }));
-      }
-    },
-    [settings.showModeWarning]
-  );
+  const handleModeChange = (mode: 'checkbook' | 'scientific') => {
+    if (settings.showModeWarning) {
+      setNewMode(mode);
+      setShowModeWarning(true);
+    } else {
+      setSettings((prev) => ({ ...prev, mode }));
+    }
+  };
 
   /**
-   * Handle history item select
+   * Handle history item selection
    */
-  const handleHistoryItemSelect = useCallback((item: CalculationHistory) => {
-    // Restore the calculation result to display
-    restoreState({
+  const handleHistoryItemSelect = (item: CalculationHistory) => {
+    setCalculatorState({
       display: item.displayResult,
       expression: item.expression,
       previousValue: null,
@@ -231,15 +407,15 @@ export default function CalculatorScreen() {
       error: false,
       errorMessage: '',
     });
-  }, [restoreState]);
+  };
 
   /**
    * Handle error modal undo
    */
-  const handleErrorUndo = useCallback(() => {
-    calculatorHandleAllClear();
+  const handleErrorUndo = () => {
+    handleAllClear();
     handleUndo();
-  }, [calculatorHandleAllClear, handleUndo]);
+  };
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -318,12 +494,12 @@ export default function CalculatorScreen() {
             onDecimalPress={handleDecimal}
             onOperatorPress={handleOperatorPress}
             onEqualsPress={handleEquals}
-            onClear={calculatorHandleClear}
-            onAllClear={calculatorHandleAllClear}
-            onBackspace={calculatorHandleBackspace}
+            onClear={handleClear}
+            onAllClear={handleAllClear}
+            onBackspace={handleBackspace}
             onUndo={handleUndo}
             onRedo={handleRedo}
-            onNegativeToggle={calculatorHandleNegative}
+            onNegativeToggle={handleNegative}
             canUndo={undoRedo.canUndo()}
             canRedo={undoRedo.canRedo()}
           />
@@ -334,7 +510,7 @@ export default function CalculatorScreen() {
       <ErrorModal
         visible={calculatorState.error}
         errorMessage={calculatorState.errorMessage}
-        onDismiss={calculatorHandleAllClear}
+        onDismiss={handleAllClear}
         onUndo={handleErrorUndo}
         showUndoButton={true}
       />
