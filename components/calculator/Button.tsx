@@ -98,7 +98,6 @@ export const Button: React.FC<ButtonProps> = ({
 
   const colors = getButtonColors();
 
-  // Memoize styles to avoid recreating on every render
   const containerStyle: ViewStyle = {
     width: responsiveButtonSize,
     height: responsiveButtonSize,

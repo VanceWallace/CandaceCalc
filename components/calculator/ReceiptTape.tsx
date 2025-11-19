@@ -10,8 +10,8 @@ import {
   View,
   FlatList,
   Text,
-  Dimensions,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
 import { CalculationHistory } from '@/types/calculator';
 import { RetroColors } from '@/constants/Colors';
@@ -30,7 +30,7 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
   isLoading = false,
   mode = 'checkbook',
 }) => {
-  const windowHeight = Dimensions.get('window').height;
+  const { height: windowHeight } = useWindowDimensions();
   const maxHeight = Math.min(windowHeight * 0.35, 300);
 
   // Determine if entry is an addition or subtraction (for color coding in checkbook mode)
@@ -152,7 +152,6 @@ export const ReceiptTape: React.FC<ReceiptTapeProps> = ({
           keyExtractor={(item) => item.id}
           ListEmptyComponent={renderEmpty}
           scrollEnabled={history.length > 3}
-          nestedScrollEnabled={true}
           showsVerticalScrollIndicator={true}
           scrollIndicatorInsets={{ right: 1 }}
           // Note: FlatList is rendered in normal order (newest first due to our data ordering)

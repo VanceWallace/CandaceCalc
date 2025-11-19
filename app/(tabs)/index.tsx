@@ -6,7 +6,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { StyleSheet, View, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useFocusEffect } from '@react-navigation/native';
 
 // Components
 import { Display } from '@/components/calculator/Display';
@@ -14,14 +13,13 @@ import { ButtonGrid } from '@/components/calculator/ButtonGrid';
 import { ReceiptTape } from '@/components/calculator/ReceiptTape';
 import { ErrorModal } from '@/components/calculator/ErrorModal';
 import { UndoRedoIndicator } from '@/components/calculator/UndoRedoIndicator';
-import { ModeSwitch } from '@/components/calculator/ModeSwitch';
 
 // Hooks
 import { useCalculator } from '@/hooks/calculator/useCalculator';
 import { useUndoRedo } from '@/hooks/calculator/useUndoRedo';
 
 // Utils and constants
-import { CalculatorEngine } from '@/utils/calculator';
+import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
 import { RetroColors } from '@/constants/Colors';
 import {
   loadSettings,
@@ -30,7 +28,6 @@ import {
   autoCleanupHistory,
   saveLastBalance,
 } from '@/utils/storage';
-import { CalculatorEngine as CalcEngine } from '@/utils/calculator';
 import { CalculationHistory, AppSettings, CalculatorState } from '@/types/calculator';
 
 export default function CalculatorScreen() {
@@ -45,8 +42,6 @@ export default function CalculatorScreen() {
 
   const [history, setHistory] = useState<CalculationHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  const [showModeWarning, setShowModeWarning] = useState(false);
-  const [newMode, setNewMode] = useState<'checkbook' | 'scientific'>('checkbook');
 
   // Calculator logic
   const calculator = useCalculator(settings.mode);
@@ -143,19 +138,30 @@ export default function CalculatorScreen() {
    */
   const handleEquals = useCallback(async () => {
     const prevState = calculatorState;
+
+    // Update calculator display first
     calculatorHandleEquals();
 
-    // After equals, save to history if successful
-    setTimeout(() => {
-      if (!calculatorState.error && calculatorState.operation === null) {
+    // Save to history if we had a valid calculation to perform
+    if (prevState.operation !== null && prevState.previousValue !== null) {
+      const currentValue = CalcEngine.getDisplayValue(prevState.display);
+
+      // Calculate result ourselves to avoid race condition with state updates
+      const { result, error } = CalcEngine.calculate(
+        prevState.previousValue,
+        prevState.operation,
+        currentValue,
+        settings.mode
+      );
+
+      if (!error) {
         const expression = CalcEngine.formatExpression(
-          prevState.previousValue || 0,
+          prevState.previousValue,
           prevState.operation,
-          CalcEngine.getDisplayValue(prevState.display),
+          currentValue,
           settings.currencySymbol
         );
 
-        const result = CalcEngine.getDisplayValue(calculatorState.display);
         const displayResult = CalcEngine.formatForDisplay(
           result,
           settings.mode,
@@ -176,7 +182,7 @@ export default function CalculatorScreen() {
           })
           .catch((error) => console.error('Error saving to history:', error));
       }
-    }, 0);
+    }
   }, [calculatorHandleEquals, calculatorState, settings]);
 
   /**
@@ -200,22 +206,6 @@ export default function CalculatorScreen() {
       });
     }
   }, [restoreState, undoRedo.canRedo, undoRedo.redo]);
-
-  /**
-   * Handle mode change
-   */
-  const handleModeChange = useCallback(
-    (newMode: 'checkbook' | 'scientific') => {
-      if (settings.showModeWarning) {
-        setNewMode(newMode);
-        setShowModeWarning(true);
-      } else {
-        // Silently switch mode
-        setSettings((prev) => ({ ...prev, mode: newMode }));
-      }
-    },
-    [settings.showModeWarning]
-  );
 
   /**
    * Handle history item select
@@ -337,16 +327,6 @@ export default function CalculatorScreen() {
         onDismiss={calculatorHandleAllClear}
         onUndo={handleErrorUndo}
         showUndoButton={true}
-      />
-
-      {/* Mode Switch Warning */}
-      <ModeSwitch
-        visible={showModeWarning}
-        newMode={newMode}
-        onDismiss={() => {
-          setShowModeWarning(false);
-          setSettings((prev) => ({ ...prev, mode: newMode }));
-        }}
       />
     </SafeAreaView>
   );
